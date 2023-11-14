@@ -4,17 +4,22 @@ import time, sys, getopt
 LINE_BEGIN = '\r'
 LINE_CLEAR = '\x1b[2K'
 
-GATE_TYPE_L = 0
-GATE_TYPE_R = 1
-GATE_TYPE_C = 2
-GATE_LABEL_L = 'L'
-GATE_LABEL_R = 'R'
+GATE_TYPE_T = 0
+GATE_TYPE_C = 1
+GATE_TYPE_L = 2
+GATE_TYPE_R = 3
+GATE_LABEL_T = 'T'
 GATE_LABEL_C = 'C'
 GATE_LABEL_DICT = {
-    GATE_TYPE_L: GATE_LABEL_L,
-    GATE_TYPE_R: GATE_LABEL_R,
+    GATE_TYPE_T: GATE_LABEL_T,
     GATE_TYPE_C: GATE_LABEL_C
 }
+
+def GT(s):
+    return (s, GATE_TYPE_T)
+
+def GC(s):
+    return (s, GATE_TYPE_C)
 
 def GL(s):
     return (s, GATE_TYPE_L)
@@ -22,42 +27,62 @@ def GL(s):
 def GR(s):
     return (s, GATE_TYPE_R)
 
-def GC(s):
-    return (s, GATE_TYPE_C)
+def degenerate(g):
+    t = typeOf(g)
+    if t == GATE_TYPE_C:
+        return g
+    return (switchOf(g), GATE_TYPE_T)
 
-GLRC = [GL, GR, GC]
-GLRC2 = list(it.product(GLRC, repeat=2))
+GTC = [GT, GC]
+GTC2 = list(it.product(GTC, repeat=2))
 
-def switchOfGate(g):
+def switchOf(g):
     return g[0]
 
-def typeOfGate(g):
+def typeOf(g):
     return g[1]
 
-def labelOfGate(g):
-    return GATE_LABEL_DICT[typeOfGate(g)]
+def labelOf(g):
+    return GATE_LABEL_DICT[typeOf(g)]
 
-def reprOfGate(g):
-    return f"{switchOfGate(g)}{labelOfGate(g)}"
+def reprOf(g):
+    return f"{switchOf(g)}{labelOf(g)}"
 
 def getAllGates(S):
     allGates = []
     for s in S:
-        allGates.append(GL(s))
-        allGates.append(GR(s))
+        allGates.append(GT(s))
         allGates.append(GC(s))
     return allGates
 
-class ConnectionScheme:
+def getAllLRCGates(S):
+    allLRCGates = []
+    for s in S:
+        allLRCGates.append(GL(s))
+        allLRCGates.append(GR(s))
+        allLRCGates.append(GC(s))
+    return allLRCGates
+
+class RailwaySystem:
     def __init__(self, rel):
         self.rel = rel
         self.mapping = dict(rel + [(g2, g1) for (g1, g2) in rel])
-
-    def __eq__(self, other):
-        return self.rel == other.rel
+        self.switches = []
+        for (g, _) in rel:
+            s = switchOf(g)
+            if s not in self.switches:
+                self.switches.append(s)
+        self.dimension = len(self.switches)
+        self.gates = getAllGates(self.switches)
 
     def __str__(self):
-        return "<" + " ".join([f"{reprOfGate(g1)}-{reprOfGate(g2)}" for (g1, g2) in self.rel]) + ">"
+        return "<" + " ".join([f"{reprOf(g1)}-{reprOf(g2)}" for (g1, g2) in self.rel]) + ">"
+
+    def __eq__(self, other):
+        for (g1, g2) in self.rel:
+            if not other.linked(g1, g2):
+                return False
+        return True
 
     def __getitem__(self, index):
         return list(self.rel)[index]
@@ -65,32 +90,31 @@ class ConnectionScheme:
     def unique(self, g):
         return self.mapping[g]
 
-    def connected(self, g1, g2):
+    def linked(self, g1, g2):
         return ((g1, g2) in self.rel) or ((g2, g1) in self.rel)
 
-class RailwaySystem:
-    def __init__(self, S, scheme: ConnectionScheme):
-        self.switches = S
-        self.dimension = len(S)
-        self.gates = getAllGates(S)
-        self.scheme = scheme
-
-    def __str__(self):
-        return f"{str(self.scheme)}"
-
-    def __repr__(self):
-        return f"{str(self.scheme)}"
-
     def isConnected(self):
+        neighbourhoodMapping = dict()
         for s1 in self.switches:
+            neighbourhood = []
             for s2 in self.switches:
                 if s1 != s2:
                     exists = False
-                    for (X, Y) in GLRC2:
-                        if self.scheme.connected(X(s1), Y(s2)):
+                    for (X, Y) in GTC2:
+                        if self.linked(X(s1), Y(s2)):
                             exists = True
-                    if not exists:
-                        return False
+                            break
+                    if exists:
+                        neighbourhood.append(s2)
+            neighbourhoodMapping[s1] = neighbourhood
+        checked = [self.switches[0]]
+        for s in checked:
+            neighbourhood = neighbourhoodMapping[s]
+            for n in neighbourhood:
+                if n not in checked:
+                    checked.append(n)
+        if len(checked) != len(self.switches):
+            return False
         return True
 
     def isIsomorphicTo(self, R):
@@ -98,54 +122,15 @@ class RailwaySystem:
             mapping = dict(zip(self.switches, perm))
             holdsAll = True
             for (s1, s2) in it.product(self.switches, repeat=2):
-                for (X, Y) in GLRC2:
-                    if self.scheme.connected(X(s1), Y(s2)):
-                        if not R.scheme.connected(X(mapping[s1]), Y(mapping[s2])):
+                for (X, Y) in GTC2:
+                    if self.linked(X(s1), Y(s2)):
+                        if not R.linked(X(mapping[s1]), Y(mapping[s2])):
                             holdsAll = False
                             break
                 if not holdsAll:
                     break
             if holdsAll:
                 return True
-        return False
-
-    def isSymmetricTo(self, R):
-        holdsAll = True
-        for g in self.gates:
-            if self.scheme.unique(g) != R.scheme.unique(g):
-                exists = False
-                for s2 in self.switches:
-                    if ((self.scheme.connected(g, GL(s2)) and R.scheme.connected(g, GR(s2))) or
-                            (self.scheme.connected(g, GR(s2)) and R.scheme.connected(g, GL(s2)))):
-                        exists = True
-                        break
-                if not exists:
-                    t = typeOfGate(g)
-                    if t != GATE_TYPE_C:
-                        s = switchOfGate(g)
-                        for g2 in self.gates:
-                            if ((self.scheme.connected(g2, GL(s)) and R.scheme.connected(g2, GR(s))) or
-                                (self.scheme.connected(g2, GR(s)) and R.scheme.connected(g2, GL(s)))):
-                                exists = True
-                                break
-                if not exists:
-                    holdsAll = False
-                    break
-
-        if holdsAll:
-            return True
-        return False
-
-    def isFundamentallyEquivalentTo(self, R):
-        if self.isIsomorphicTo(R):
-            return True
-
-        if self.switches != R.switches:
-            return False
-
-        if self.isSymmetricTo(R):
-            return True
-
         return False
 
 def getAllPairings(S):
@@ -162,44 +147,46 @@ def getAllPairings(S):
 
 def getAllConnectedRailwaySystems(dim):
     S = list(range(dim))
-    G = getAllGates(S)
+    allLRCGates = getAllLRCGates(S)
+    allLRCPairings = getAllPairings(allLRCGates)
+    allConnectedRailwaySystemsDup = []
 
-    allPairings = getAllPairings(G)
-    for pairing in allPairings:
-        rel = []
-        for pair in pairing:
-            rel.append(pair)
+    for LRCPairing in allLRCPairings:
+        rel = list([(degenerate(g1), degenerate(g2)) for (g1, g2) in LRCPairing])
         
-        scheme = ConnectionScheme(rel)
-        R = RailwaySystem(S, scheme)
+        R = RailwaySystem(rel)
 
-        if not R.isConnected:
-            break
+        if not R.isConnected():
+            continue
 
-        yield R
+        allConnectedRailwaySystemsDup.append(R)
+
+    allConnectedRailwaySystems = allConnectedRailwaySystemsDup.copy()
+    index = 0
+    while index < len(allConnectedRailwaySystems) - 1:
+        R = allConnectedRailwaySystems[index]
+        while allConnectedRailwaySystems.count(R) > 1:
+            allConnectedRailwaySystems.remove(R)
+        index += 1
+
+    return allConnectedRailwaySystems
 
 def classifyRailwaySystems(dim):
-    RR = list(getAllConnectedRailwaySystems(dim))
-    unclassified = list(range(len(RR)))
+    unclassified = getAllConnectedRailwaySystems(dim)
+    la = len(unclassified)
     result = []
     equivalenceClassIndex = -1
     while len(unclassified) != 0:
         equivalenceClassIndex += 1
         print(f"Started collecting railway systems of class {equivalenceClassIndex}")
-        equivalenceClassRef = [unclassified[0]]
+        equivalenceClass = [unclassified[0]]
         unclassified.pop(0)
-        lu = len(unclassified)
-        lr = len(RR)
-        print(f"{LINE_BEGIN + LINE_CLEAR}> 1 railway system of class {equivalenceClassIndex} found ({lr - lu} / {lr} = {round((lr - lu) / lr * 100, 3)}% of total has been classified)", end='')
-        for RId in equivalenceClassRef:
-            for RId2 in unclassified:
-                if RR[RId].isFundamentallyEquivalentTo(RR[RId2]):
-                    lu = len(unclassified)
-                    lr = len(RR)
-                    print(f"{LINE_BEGIN + LINE_CLEAR}> {len(equivalenceClassRef)} railway systems of class {equivalenceClassIndex} found ({lr - lu} / {lr} = {round((lr - lu) / lr * 100, 3)}% of total has been classified)", end='')
-                    equivalenceClassRef.append(RId2)
-                    unclassified.remove(RId2)
-        equivalenceClass = [RR[RId] for RId in equivalenceClassRef]
+        for i, R in enumerate(unclassified):
+            if R.isIsomorphicTo(equivalenceClass[0]):
+                lu = len(unclassified)
+                print(f"{LINE_BEGIN + LINE_CLEAR}> {len(equivalenceClass)} railway systems of class {equivalenceClassIndex} found ({la - lu} / {la} = {round((la - lu) / la * 100, 3)}% of total has been classified)", end='')
+                equivalenceClass.append(R)
+                unclassified.pop(i)
         result.append(equivalenceClass)
         print(f"{LINE_BEGIN + LINE_CLEAR}Finished collecting {len(equivalenceClass)} railway systems of class {equivalenceClassIndex}!\n")
 
@@ -250,4 +237,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-
