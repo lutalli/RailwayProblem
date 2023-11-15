@@ -1,6 +1,6 @@
 # Railway Problem
 
-This repo contains materials for a project I'm working on in my school. It's a problem about the classification of different types of *railway systems* that are strictly mathematically defined. A particularly central elemnt in this problem is the *switch*. For a detailed formulation of the problem see [`frage_formulierung.pdf`](https://github.com/lutalli/RailwayProblem/blob/main/frage_formulierung.pdf) (in German).
+This repo contains materials for a school project I'm working on which is about the classification of *railway systems*. A railway system is a mathematically defined structure. For a detailed formulation of the problem, see [`frage_formulierung.pdf`](https://github.com/lutalli/RailwayProblem/blob/main/frage_formulierung.pdf) (written in German).
 
 The Python script [`eisenbahn_brutal.py`](https://github.com/lutalli/RailwayProblem/blob/main/eisenbahn_brutal.py) is a brutal force solver for the problem that simply lists out all connection possiblities of given switches and classify them. Usage:
 
