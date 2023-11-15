@@ -58,9 +58,11 @@
 			Äquivalenterweise sagt man, dass die Relation $\connec$ eine \textit{Injektion} (und damit eine \textit{Surjektion}) ist.
 		\end{enumerate}
 
-	    \item Keine Weiche wird isoliert. Das bedeutet
-		\[ \forall w_1,w_2\in W\,(w_1\neq w_2 \to \exists\mathsf{X},\mathsf{Y}\in\lrh\ (\mathsf{X}(w_1)\connec\mathsf{Y}(w_2))) \]
-		Da laut \ref{Bd:i} kein Gleisgang offen bleibt, kann man diese Bedingung auch so deuten: Keine Weiche führt zu sich; Zwischen je zwei Weichen existiert immer mindestens eine Verbindung.
+	    \item Keine Weiche wird isoliert; Es existiert immer einen Weg von einer Weiche zu einer anderen. In Symbolen,
+		\begin{gather*}
+		    \forall w_1,w_b\in W\ \exists g_1,g_2,\cdots,g_b \\
+		    g_1\in\lrh(w_1)\land g_b\in\lrh(w_b)\land g_1\connec g_2\connec\cdots\connec g_b
+		\end{gather*}
 	\end{enumerate}
 	$\connec$ heißt dann das \textbf{Verbindungsschema} des Bahnsystems $\mathcal{B}$.
 
@@ -70,17 +72,18 @@
     \end{defi}
 
     \begin{defi}
-	Seien $\mathcal{B}_1 = (W_1,G_1,\lrh_1,\connec_1)$ und $\mathcal{B}_2 = (W_2,G_2,\lrh_2,\connec_2)$ zwei Bahsysteme derselben Dimension. $\mathcal{B}_1$ und $\mathcal{B}_2$ sind \textit{äquivalent} (in Symbolen: $\mathcal{B}_1\equiv\mathcal{B}_2$), wenn \textit{mindestens eine} von den folgenden Kriterien erfüllt wird:
+	Seien $\mathcal{B}_1 = (W_1,G_1,\lrh_1,\connec_1)$ und $\mathcal{B}_2 = (W_2,G_2,\lrh_2,\connec_2)$ zwei Bahnsysteme derselben Dimension. $\mathcal{B}_1$ und $\mathcal{B}_2$ sind \textit{äquivalent} (in Symbolen: $\mathcal{B}_1\equiv\mathcal{B}_2$), wenn \textit{mindestens eine} von den folgenden Kriterien erfüllt wird:
 
 	\begin{enumerate}[label=\roman*., ref=(\roman*)]
 	    \item (Arbitratität der Benennung) $(G_1,\connec_1)$ ist \textit{isomorph} zu $(G_2,\connec_2)$. D.h.\ es existiert eine Surjektion $f:G_1\to G_2$, so dass es für jede $g_1\in G_1$ und jede $g_2\in G_2$ gilt
 		\[ g_1\connec_1 g_2 \quad\to\quad f(g_1)\connec_2 f(g_2) \]
 		Der Isomorphismus $f$ entspricht einer Vertauschung oder Umnennung der Weichen. Ein Bahnsystem bleibt also grundsätzlich unverändert, wenn nur die Nummerierungen der Weichen einander vertauscht oder umgenannt werden, während die Relationen dazwischen beibehalten werden. (Es ist egal, ob ich die Weichen jeweils $1$, $2$, $3$, $4$, oder $2$, $4$, $3$, $1$, oder Hund, Katze, Frosch, Spatz nenne.)
-	    \item (Symmetrie der Weiche) Es gilt $W_1=W_2$ und $G_1=G_2$. Nenne jetzt $W:=W_1=W_2$ und $G:=G_1=G_2$. Der Unterschied zwischen $\mathcal{B}_1$ und $\mathcal{B}_2$ besteht nur darin, dass Linkgleisgänge mit Rechtgleisgängen vertauscht werden. Das heißt in Symbolen:
+	    \item (Symmetrie der Weiche) Es gilt $W_1=W_2$ und $G_1=G_2$. Nenne jetzt $W:=W_1=W_2$ und $G:=G_1=G_2$. Der Unterschied zwischen $\mathcal{B}_1$ und $\mathcal{B}_2$ besteht nur darin, dass Linkgleisgänge mit Rechtgleisgängen vertauscht werden. Das heißt in Symbolen, es existiert ein $g\in G$, so dass
 		\begin{align*}
-		    \forall g\in G (\quad&{\connec_1}(g) = {\connec_2}(g) \\
-		    \lor\quad &\exists w\in W(g \connec_1 \lgang(w) \land g \connec_2 \rgang(w)) \\
-		    \lor\quad &\exists w\in W(g \connec_1 \rgang(w) \land g \connec_2 \lgang(w)))
+		    \quad&{\connec_1}(g) = {\connec_2}(g) \\
+		    \lor\quad &\exists w'\in W((g\connec_1\lgang(w')\land g\connec_2\rgang(w'))\lor(g\connec_1\rgang(w')\land g\connec_2\lgang(w'))) \\
+		    \lor\quad &(\exists w\in W(g=H(w))\land\\
+			      &\exists g'\in G((g'\connec_1\lgang(w)\land g'\connec_2\rgang(w))\lor(g'\connec_1\rgang(w)\land g'\connec_2\lgang(w))))
 		\end{align*}
 	    \item (Transtivität) Es existiert ein Bahnsystem $\mathcal{B}_3$ mit $\mathcal{B}_1 \equiv \mathcal{B}_3$ und $\mathcal{B}_3 \equiv \mathcal{B}_2$.
 	\end{enumerate}
